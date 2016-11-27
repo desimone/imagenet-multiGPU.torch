@@ -1,5 +1,5 @@
 function createModel(nGPU)
-   local modelType = 'A' -- on a titan black, B/D/E run out of memory even for batch-size 32
+   local modelType = 'D' -- Most sem. segmentation (FCN, etc) use VGG16
 
    -- Create tables describing VGG configurations A, B, D, E
    local cfg = {}
@@ -17,7 +17,7 @@ function createModel(nGPU)
 
    local features = nn.Sequential()
    do
-      local iChannels = 3;
+      local iChannels = opt.channels;
       for k,v in ipairs(cfg) do
          if v == 'M' then
             features:add(nn.SpatialMaxPooling(2,2,2,2))
@@ -25,6 +25,7 @@ function createModel(nGPU)
             local oChannels = v;
             local conv3 = nn.SpatialConvolution(iChannels,oChannels,3,3,1,1,1,1);
             features:add(conv3)
+            features:add(nn.SpatialBatchNormalization(oChannels,1e-3)) -- bdd: add batch normalization
             features:add(nn.ReLU(true))
             iChannels = oChannels;
          end

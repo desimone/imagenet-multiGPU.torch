@@ -24,12 +24,14 @@ if not os.execute('cd ' .. opt.data) then
     error(("could not chdir to '%s'"):format(opt.data))
 end
 
-local loadSize   = {3, opt.imageSize, opt.imageSize}
-local sampleSize = {3, opt.cropSize, opt.cropSize}
+local loadSize   = {opt.channels, opt.imageSize, opt.imageSize}
+local sampleSize = {opt.channels, opt.cropSize, opt.cropSize}
 
 
 local function loadImage(path)
-   local input = image.load(path, 3, 'float')
+   local input = image.load(path, opt.channels, 'float')
+    input:resize(opt.channels,opt.imageSize,opt.imageSize)
+
    -- find the smaller dimension, and resize it to loadSize (while keeping aspect ratio)
    if input:size(3) < input:size(2) then
       input = image.scale(input, loadSize[2], loadSize[3] * input:size(2) / input:size(3))
@@ -62,10 +64,10 @@ local trainHook = function(self, path)
    local out = image.crop(input, w1, h1, w1 + oW, h1 + oH)
    assert(out:size(3) == oW)
    assert(out:size(2) == oH)
-   -- do hflip with probability 0.5
+--    -- do hflip with probability 0.5
    if torch.uniform() > 0.5 then out = image.hflip(out) end
-   -- mean/std
-   for i=1,3 do -- channels
+--    -- mean/std
+   for i=1,opt.channels do -- channels
       if mean then out[{{i},{},{}}]:add(-mean[i]) end
       if std then out[{{i},{},{}}]:div(std[i]) end
    end
@@ -121,7 +123,7 @@ testHook = function(self, path)
    local h1 = math.ceil((iH-oH)/2)
    local out = image.crop(input, w1, h1, w1+oW, h1+oH) -- center patch
    -- mean/std
-   for i=1,3 do -- channels
+   for i=1,opt.channels do -- channels
       if mean then out[{{i},{},{}}]:add(-mean[i]) end
       if std then out[{{i},{},{}}]:div(std[i]) end
    end
@@ -164,11 +166,11 @@ else
    local meanEstimate = {0,0,0}
    for i=1,nSamples do
       local img = trainLoader:sample(1)[1]
-      for j=1,3 do
+      for j=1,opt.channels do
          meanEstimate[j] = meanEstimate[j] + img[j]:mean()
       end
    end
-   for j=1,3 do
+   for j=1,opt.channels do
       meanEstimate[j] = meanEstimate[j] / nSamples
    end
    mean = meanEstimate
@@ -177,11 +179,11 @@ else
    local stdEstimate = {0,0,0}
    for i=1,nSamples do
       local img = trainLoader:sample(1)[1]
-      for j=1,3 do
+      for j=1,opt.channels do
          stdEstimate[j] = stdEstimate[j] + img[j]:std()
       end
    end
-   for j=1,3 do
+   for j=1,opt.channels do
       stdEstimate[j] = stdEstimate[j] / nSamples
    end
    std = stdEstimate

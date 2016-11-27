@@ -27,6 +27,7 @@ function M.parse(arg)
     cmd:option('-imageSize',         256,    'Smallest side of the resized image')
     cmd:option('-cropSize',          224,    'Height and Width of image crop to be used as input layer')
     cmd:option('-nClasses',        1000, 'number of classes in the dataset')
+    cmd:option('-channels',        1, 'Number of channels in input images')    
     ------------- Training options --------------------
     cmd:option('-nEpochs',         55,    'Number of total epochs to run')
     cmd:option('-epochSize',       10000, 'Number of batches per epoch')
@@ -48,7 +49,7 @@ function M.parse(arg)
                             cmd:string(opt.netType, opt,
                                        {netType=true, retrain=true, optimState=true, cache=true, data=true}))
     -- add date/time
-    opt.save = paths.concat(opt.save, '' .. os.date():gsub(' ',''))
+    opt.save = paths.concat(opt.save, '' .. os.date("%Y%m%dT%H%M%S"))
     return opt
 end
 
